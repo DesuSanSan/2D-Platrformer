@@ -10,29 +10,32 @@ public class PlayerControll : MonoBehaviour
     [SerializeField] float waitTime;
     [SerializeField] float waitHeavy;
     [SerializeField] float timeToNextAttack;
+    [SerializeField] float attackRangeLight;
+    [SerializeField] float attackRangeHeavy;
+
     float horizontalInput;
     float cooldown;
     bool isOnGround = true;
     bool facingRight = true;
     int i = 0;
+    int currentHealth;
+    int maxHealth = 100;
+
+    Rigidbody2D p_rigidbody;
 
     public Animator animator;
     public Transform attackPointLight;
     public Transform attackPointHeavy;
-    public float attackRangeLight = 0.5f;
-    public float attackRangeHeavy = 0.5f;
     public LayerMask enemyLayers;
     public int damageLight = 20;
     public int damageHeavy = 50;
-
-    Rigidbody2D p_rigidbody;
-
 
     private void Start()
     {
         p_rigidbody = GetComponent<Rigidbody2D>();
         cooldown = 0.5f;
         timeToNextAttack = cooldown;
+        currentHealth = maxHealth;
     }
     void Update()
     {
@@ -113,6 +116,10 @@ public class PlayerControll : MonoBehaviour
             // Changing jump animation to false
             animator.SetBool("IsJumping", false);
         }
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+
+        }
     }
 
     // Attack
@@ -128,7 +135,9 @@ public class PlayerControll : MonoBehaviour
             timeToNextAttack = cooldown;
             foreach(Collider2D enemy in hitEnemiesLight)
             {
-                enemy.GetComponent<Bandit>().TakeDamage(damageLight);
+                Bandit temp = enemy.GetComponent<Bandit>();
+                if (temp != null)
+                    temp.TakeDamage(damageLight);
             }
         }
 
@@ -139,9 +148,40 @@ public class PlayerControll : MonoBehaviour
             timeToNextAttack = cooldown;
             foreach (Collider2D enemy in hitEnemiesHeavy)
             {
-                enemy.GetComponent<Bandit>().TakeDamage(damageHeavy);
+                Bandit temp = enemy.GetComponent<Bandit>();
+                if( temp != null ) 
+                    temp.TakeDamage(damageHeavy);
             }
         }
+    }
+
+
+    public void TakeDamagePlayer(int damageBandit)
+    {
+        // Checking if our current health is higher than 0
+        if (currentHealth > 0)
+        {
+            // Subtract dmg taken from our current health
+            currentHealth -= damageBandit;
+            // Triggering hurt animation
+            animator.SetTrigger("Hurt");
+        }
+
+
+        // Checking if our current health is same or less than 0
+        if (currentHealth <= 0)
+        {
+            // If health is same or less than 0 then we die
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        p_rigidbody.constraints = RigidbodyConstraints2D.FreezePosition;
+        animator.SetBool("IsDead", true);
+        GetComponent<Collider2D>().enabled = false;
+        this.enabled = false;
     }
 
     // Waiting for attack animation to end
@@ -163,6 +203,7 @@ public class PlayerControll : MonoBehaviour
     // Drawing attack range in unity
     private void OnDrawGizmosSelected()
     {
+        // Checking if attack point exist
         if (attackPointLight == null)
         {
             return;
@@ -172,6 +213,7 @@ public class PlayerControll : MonoBehaviour
             return;
         }
 
+        // Drawing attack range in edytor
         Gizmos.DrawWireSphere(attackPointHeavy.position, attackRangeHeavy);
         Gizmos.DrawWireSphere(attackPointLight.position, attackRangeLight);
     }
