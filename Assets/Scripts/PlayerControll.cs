@@ -135,9 +135,9 @@ public class PlayerControll : MonoBehaviour
             timeToNextAttack = cooldown;
             foreach(Collider2D enemy in hitEnemiesLight)
             {
-                Bandit temp = enemy.GetComponent<Bandit>();
-                if (temp != null)
-                    temp.TakeDamage(damageLight);
+                Bandit bandit = enemy.GetComponent<Bandit>();
+                if (bandit.GetComponent<BoxCollider2D>() != null)
+                    bandit.TakeDamage(damageLight);
             }
         }
 

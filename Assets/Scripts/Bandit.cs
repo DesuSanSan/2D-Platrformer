@@ -6,13 +6,15 @@ public class Bandit : MonoBehaviour
     [SerializeField] float speed;
     [SerializeField] float attackRange;
     [SerializeField] Rigidbody2D playerRB;
-    [SerializeField] bool isAttacking = false;
+    public bool isAttacking = false;
 
     int countPlayers = 0;
     int currentHealth;
     int maxHealth = 100;
     float timeToSpawn;
     float cooldownForSpawn;
+    [SerializeField] float timeToAttack;
+    float cooldownForAttack;
     bool isDead = false;
     bool goingRight = false;
     bool isAtPoint = false;
@@ -20,6 +22,7 @@ public class Bandit : MonoBehaviour
 
     Rigidbody2D enemyRB;
 
+    public BanditAgro banditAgro;
     public Animator animator;
     public Transform attackPoint;
     public LayerMask playerLayer;
@@ -31,7 +34,8 @@ public class Bandit : MonoBehaviour
         currentHealth = maxHealth;
         cooldownForSpawn = 3;
         enemyRB = GetComponent<Rigidbody2D>();
-
+        cooldownForAttack = 0.7f;
+        timeToAttack = cooldownForAttack;
     }
 
     private void Update()
@@ -42,9 +46,12 @@ public class Bandit : MonoBehaviour
             timeToSpawn = cooldownForSpawn;
             animator.SetBool("IsDead", false);
 
-            if(isAttacking != true)
-                Patrol();
-            else
+            if (isAttacking != true)
+            {
+                if (banditAgro.isChasing != true)
+                    Patrol();
+            }
+            else if (isAttacking == true)
                 enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
 
             animator.SetFloat("Velocity", speed);
@@ -53,6 +60,14 @@ public class Bandit : MonoBehaviour
         // If bandit is dead then wait for respawn
         else
             WaitForSpawn();
+
+        if (timeToAttack > 0)
+            timeToAttack -= Time.deltaTime;
+        else
+            isAttacking = false;
+
+        if (isWaiting != false)
+            enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
     }
 
     // Script that determinets what bandit do after taking hit
@@ -155,6 +170,22 @@ public class Bandit : MonoBehaviour
         }
     }
 
+    public void ChasePlayer()
+    {
+        if (playerRB.transform.position.x < enemyRB.transform.position.x)
+        {
+            enemyRB.velocity = new Vector2(-speed * Time.fixedDeltaTime, enemyRB.velocity.y);
+            transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
+            goingRight = false;
+        }
+        else
+        {
+            enemyRB.velocity = new Vector2(speed * Time.fixedDeltaTime, enemyRB.velocity.y);
+            transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
+            goingRight = true;
+        }
+    }
+
     // If bandit is in patrol point 
     IEnumerator WaitInPoint()
     {
@@ -198,15 +229,26 @@ public class Bandit : MonoBehaviour
         Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, playerLayer);
         if (other.CompareTag("Player"))
         {
-            isAttacking = true;
-            countPlayers++;
-            animator.SetFloat("CountPlayers", countPlayers);
-            animator.SetTrigger("IsAttacking");
-            foreach (Collider2D player in hitPlayer)
+            if (timeToAttack > 0)
+                isAttacking = true;
+            else
             {
-                 player.GetComponent<PlayerControll>().TakeDamagePlayer(damage);
+                if (isAttacking == true)
+                    isAttacking = false;
+                else
+                {
+                    isAttacking = true;
+                    timeToAttack = cooldownForAttack;
+                    countPlayers++;
+                    animator.SetFloat("CountPlayers", countPlayers);
+                    animator.SetTrigger("IsAttacking");
+                    //StartCoroutine(WaitForAttackAnimation());
+                    foreach (Collider2D player in hitPlayer)
+                    {
+                        player.GetComponent<PlayerControll>().TakeDamagePlayer(damage);
+                    }
+                }
             }
-            
         }
     }
 
@@ -216,7 +258,13 @@ public class Bandit : MonoBehaviour
         {
             countPlayers--;
             animator.SetFloat("CountPlayers", countPlayers);
-            StartCoroutine(WaitForAttackAnimation());
+            animator.ResetTrigger("IsAttacking");
+            if (timeToAttack > 0)
+                isAttacking = true;
+            else
+                isAttacking = false;
+
+            //StartCoroutine(WaitForAttackAnimation());
         }
     }
 
