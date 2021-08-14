@@ -7,7 +7,7 @@ public class BanditAgro : MonoBehaviour
 
     Vector3 offset = new Vector3(0, 0.4f, 0);
     
-    public float playerCords;
+    public Vector2 playerCords;
     public bool isChasing = false;
     public Bandit bandit;
     public GameObject banditGO;
@@ -34,8 +34,7 @@ public class BanditAgro : MonoBehaviour
     {
         if (other.transform.tag == ("Player"))
         {
-            isChasing = false;
-            playerCords = player.transform.position.x;
+            playerCords = player.transform.position;
         }
     }
 }

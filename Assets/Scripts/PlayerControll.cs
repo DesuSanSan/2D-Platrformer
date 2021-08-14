@@ -15,10 +15,12 @@ public class PlayerControll : MonoBehaviour
 
     float horizontalInput;
     float cooldown;
+    [SerializeField] float timeAfterHit = 1;
     bool isOnGround = true;
     bool facingRight = true;
+    [SerializeField] bool isHurt = false;
     int i = 0;
-    int currentHealth;
+    [SerializeField] int currentHealth;
     int maxHealth = 100;
 
     Rigidbody2D p_rigidbody;
@@ -62,6 +64,16 @@ public class PlayerControll : MonoBehaviour
             Attack();
         }
         animator.SetFloat("yVelocity", p_rigidbody.velocity.y);
+
+        if (isHurt == true && timeAfterHit < 0)
+        {
+            isHurt = false;
+        }
+
+        if (timeAfterHit > 0)
+        {
+            timeAfterHit -= Time.deltaTime;
+        }
     }
 
     void Move()
@@ -159,12 +171,15 @@ public class PlayerControll : MonoBehaviour
     public void TakeDamagePlayer(int damageBandit)
     {
         // Checking if our current health is higher than 0
-        if (currentHealth > 0)
+        if (currentHealth > 0 && isHurt == false)
         {
             // Subtract dmg taken from our current health
             currentHealth -= damageBandit;
             // Triggering hurt animation
             animator.SetTrigger("Hurt");
+            isHurt = true;
+            timeAfterHit = 1;
+            StartCoroutine(WaitForHurtAnimation());
         }
 
 
@@ -198,6 +213,13 @@ public class PlayerControll : MonoBehaviour
         animator.SetBool("IsAttackingHeavy", true);
         yield return new WaitForSeconds(waitHeavy);
         animator.SetBool("IsAttackingHeavy", false);
+    }
+    IEnumerator WaitForHurtAnimation()
+    {
+        yield return new WaitForSeconds(0.15f);
+        animator.SetBool("IsDead", false);
+        animator.ResetTrigger("Hurt");
+
     }
 
     // Drawing attack range in unity

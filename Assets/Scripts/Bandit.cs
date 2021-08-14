@@ -57,7 +57,23 @@ public class Bandit : MonoBehaviour
                         WaitInPoint();
                 }
                 else if (banditAgro.isChasing == true && isAttacking != true)
+                {
                     ChasePlayer();
+                    if(Vector2.Distance(banditAgro.playerCords, enemyRB.transform.position) < 0.3f)
+                    {
+
+                        if (isWaiting != true)
+                        {
+                            animator.SetBool("IsStanding", true);
+                            waitingAtPoint = 3;
+                            isWaiting = true;
+                        }
+                        else
+                            WaitInPoint();
+                    }
+                    else
+                        GoingToLastSeenPlayerPosition();
+                }
             }
             else if (isAttacking == true)
                 enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
@@ -149,14 +165,11 @@ public class Bandit : MonoBehaviour
             {
                 isAtPoint = true;
                 // If bandit is on certain point
-                if (transform.position.x <= 1.284f && isAtPoint== true)
-                {
-                    // Bandit must wait, with idel animation, his x velocity is set to 0 so he will not slid on ground and start waiting in patrol point
-                    isWaiting = true;
-                    animator.SetBool("IsStanding", true);
-                    enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
-                    waitingAtPoint = 3;
-                }
+                // Bandit must wait, with idel animation, his x velocity is set to 0 so he will not slid on ground and start waiting in patrol point
+                isWaiting = true;
+                animator.SetBool("IsStanding", true);
+                enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
+                waitingAtPoint = 3;
             }
         }
 
@@ -169,14 +182,11 @@ public class Bandit : MonoBehaviour
             {
                 isAtPoint = true;
                 // If bandit is on certain point
-                if (transform.position.x >= 4.25f && isAtPoint == true) 
-                {
-                    // Bandit must wait, with idel animaton, his x velocity is set to 0 so he will not slid on ground and start waiting in patrol point
-                    isWaiting = true;
-                    animator.SetBool("IsStanding", true);
-                    enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
-                    waitingAtPoint = 3;
-                }
+                // Bandit must wait, with idel animaton, his x velocity is set to 0 so he will not slid on ground and start waiting in patrol point
+                isWaiting = true;
+                animator.SetBool("IsStanding", true);
+                enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
+                waitingAtPoint = 3;
             }
         }
     }
@@ -188,14 +198,12 @@ public class Bandit : MonoBehaviour
             enemyRB.velocity = new Vector2(-speed * Time.fixedDeltaTime, enemyRB.velocity.y);
             transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
             goingRight = false;
-            GoingToLastSeenPlayerPosition();
         }
         else
         {
             enemyRB.velocity = new Vector2(speed * Time.fixedDeltaTime, enemyRB.velocity.y);
             transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
             goingRight = true;
-            GoingToLastSeenPlayerPosition();
         }
     }
 
@@ -208,6 +216,7 @@ public class Bandit : MonoBehaviour
             isWaiting = false;
             // Bandit leave patrol point
             isAtPoint = false;
+            banditAgro.isChasing = false;
             // Bandit is no more standing still
             animator.SetBool("IsStanding", false);
             // Checking if he walked right
@@ -226,11 +235,18 @@ public class Bandit : MonoBehaviour
                 transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
             }
         }
+        /*
+        else
+        {
+            isWaiting = true;
+            isAtPoint = true;
+        }
+        */
     }
 
     void GoingToLastSeenPlayerPosition()
     {
-        if (banditAgro.playerCords < enemyRB.transform.position.x)
+        if (banditAgro.playerCords.x < enemyRB.transform.position.x)
         {
             enemyRB.velocity = new Vector2(-speed * Time.fixedDeltaTime, enemyRB.velocity.y);
             transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
