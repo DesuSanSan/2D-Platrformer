@@ -11,14 +11,13 @@ public class Bandit : MonoBehaviour
     int countPlayers = 0;
     int currentHealth;
     int maxHealth = 100;
+    [SerializeField] float waitingAtPoint = 3;
     float timeToSpawn;
     float cooldownForSpawn;
-    [SerializeField] float timeToAttack;
+    float timeToAttack;
     float cooldownForAttack;
     bool isDead = false;
     bool goingRight = false;
-    bool isAtPoint = false;
-    bool isWaiting = false;
 
     Rigidbody2D enemyRB;
 
@@ -27,6 +26,8 @@ public class Bandit : MonoBehaviour
     public Transform attackPoint;
     public LayerMask playerLayer;
     public int damage = 25;
+    public bool isWaiting = false;
+    public bool isAtPoint = false;
     
 
     private void Start()
@@ -49,7 +50,14 @@ public class Bandit : MonoBehaviour
             if (isAttacking != true)
             {
                 if (banditAgro.isChasing != true)
-                    Patrol();
+                {
+                    if (isWaiting != true)
+                        Patrol();
+                    else
+                        WaitInPoint();
+                }
+                else if (banditAgro.isChasing == true && isAttacking != true)
+                    ChasePlayer();
             }
             else if (isAttacking == true)
                 enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
@@ -60,6 +68,9 @@ public class Bandit : MonoBehaviour
         // If bandit is dead then wait for respawn
         else
             WaitForSpawn();
+
+        if (waitingAtPoint > 0)
+            waitingAtPoint -= Time.deltaTime;
 
         if (timeToAttack > 0)
             timeToAttack -= Time.deltaTime;
@@ -144,7 +155,7 @@ public class Bandit : MonoBehaviour
                     isWaiting = true;
                     animator.SetBool("IsStanding", true);
                     enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
-                    StartCoroutine(WaitInPoint());
+                    waitingAtPoint = 3;
                 }
             }
         }
@@ -164,7 +175,7 @@ public class Bandit : MonoBehaviour
                     isWaiting = true;
                     animator.SetBool("IsStanding", true);
                     enemyRB.velocity = new Vector2(0, enemyRB.velocity.y);
-                    StartCoroutine(WaitInPoint());
+                    waitingAtPoint = 3;
                 }
             }
         }
@@ -177,6 +188,53 @@ public class Bandit : MonoBehaviour
             enemyRB.velocity = new Vector2(-speed * Time.fixedDeltaTime, enemyRB.velocity.y);
             transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
             goingRight = false;
+            GoingToLastSeenPlayerPosition();
+        }
+        else
+        {
+            enemyRB.velocity = new Vector2(speed * Time.fixedDeltaTime, enemyRB.velocity.y);
+            transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
+            goingRight = true;
+            GoingToLastSeenPlayerPosition();
+        }
+    }
+
+    // If bandit is in patrol point 
+    void WaitInPoint()
+    {
+        if (waitingAtPoint < 0)
+        {
+            // Enable bandit to walk
+            isWaiting = false;
+            // Bandit leave patrol point
+            isAtPoint = false;
+            // Bandit is no more standing still
+            animator.SetBool("IsStanding", false);
+            // Checking if he walked right
+            if (goingRight == false)
+            {
+                // If not he will be walking right
+                goingRight = true;
+                // Flip bandit
+                transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
+            }
+            else
+            {
+                // If true he will be walking left
+                goingRight = false;
+                // Flip bandit
+                transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
+            }
+        }
+    }
+
+    void GoingToLastSeenPlayerPosition()
+    {
+        if (banditAgro.playerCords < enemyRB.transform.position.x)
+        {
+            enemyRB.velocity = new Vector2(-speed * Time.fixedDeltaTime, enemyRB.velocity.y);
+            transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
+            goingRight = false;
         }
         else
         {
@@ -184,35 +242,9 @@ public class Bandit : MonoBehaviour
             transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
             goingRight = true;
         }
-    }
 
-    // If bandit is in patrol point 
-    IEnumerator WaitInPoint()
-    {
-        // He will be waiting for 3 seconds
-        yield return new WaitForSeconds(3);
-        // Checking if he walked right
-        if (goingRight == false)
-        {
-            // If not he will be walking right
-            goingRight = true;
-            // Flip bandit
-            transform.localScale = new Vector3(-0.6337878f, transform.localScale.y, transform.localScale.z);
-        }
-        else
-        {
-            // If true he will be walking left
-            goingRight = false;
-            // Flip bandit
-            transform.localScale = new Vector3(0.6337878f, transform.localScale.y, transform.localScale.z);
-        }
-        // Enable bandit to walk
-        isWaiting = false;
-        // Bandit leave patrol point
-        isAtPoint = false;
-        // Bandit is no more standing still
-        animator.SetBool("IsStanding", false);
     }
+    
 
     // Drawing gizmos for attack for easily adjusments
     private void OnDrawGizmosSelected()
@@ -242,7 +274,6 @@ public class Bandit : MonoBehaviour
                     countPlayers++;
                     animator.SetFloat("CountPlayers", countPlayers);
                     animator.SetTrigger("IsAttacking");
-                    //StartCoroutine(WaitForAttackAnimation());
                     foreach (Collider2D player in hitPlayer)
                     {
                         player.GetComponent<PlayerControll>().TakeDamagePlayer(damage);
@@ -258,20 +289,13 @@ public class Bandit : MonoBehaviour
         {
             countPlayers--;
             animator.SetFloat("CountPlayers", countPlayers);
-            animator.ResetTrigger("IsAttacking");
+            if (isAttacking != true)
+                animator.ResetTrigger("IsAttacking");
+
             if (timeToAttack > 0)
                 isAttacking = true;
             else
                 isAttacking = false;
-
-            //StartCoroutine(WaitForAttackAnimation());
         }
-    }
-
-    IEnumerator WaitForAttackAnimation()
-    {
-        yield return new WaitForSeconds(0.7f);
-        animator.SetTrigger("IsAttacking");
-        isAttacking = false;
     }
 }
