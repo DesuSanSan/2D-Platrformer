@@ -20,8 +20,6 @@ public class PlayerControll : MonoBehaviour
     bool facingRight = true;
     [SerializeField] bool isHurt = false;
     int i = 0;
-    [SerializeField] int currentHealth;
-    int maxHealth = 100;
 
     Rigidbody2D p_rigidbody;
 
@@ -29,8 +27,10 @@ public class PlayerControll : MonoBehaviour
     public Transform attackPointLight;
     public Transform attackPointHeavy;
     public LayerMask enemyLayers;
-    public int damageLight = 20;
-    public int damageHeavy = 50;
+    public int damageLight = 1;
+    public int damageHeavy = 2;
+    public int maxHealth = 12;
+    public int currentHealth;
 
     private void Start()
     {

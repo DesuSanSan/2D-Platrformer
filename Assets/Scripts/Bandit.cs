@@ -10,7 +10,7 @@ public class Bandit : MonoBehaviour
 
     int countPlayers = 0;
     int currentHealth;
-    int maxHealth = 100;
+    int maxHealth = 3;
     [SerializeField] float waitingAtPoint = 3;
     float timeToSpawn;
     float cooldownForSpawn;
@@ -25,7 +25,7 @@ public class Bandit : MonoBehaviour
     public Animator animator;
     public Transform attackPoint;
     public LayerMask playerLayer;
-    public int damage = 25;
+    public int damage = 1;
     public bool isWaiting = false;
     public bool isAtPoint = false;
     
